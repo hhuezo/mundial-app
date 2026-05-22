@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">Mundial</string>
+    <string name="login_subtitle">Inicia sesión para continuar</string>
+    <string name="login_email">Correo electrónico</string>
+    <string name="login_email_hint">tu@correo.com</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_password_hint">••••••••</string>
+    <string name="login_button">Iniciar sesión</string>
+    <string name="login_show_password">Mostrar contraseña</string>
+    <string name="login_hide_password">Ocultar contraseña</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_marcadores">Marcadores</string>
+    <string name="nav_opciones">Opciones</string>
+    <string name="home_title">Bienvenido al Mundial</string>
+    <string name="home_subtitle">Partidos, equipos y todo lo que necesitas del torneo.</string>
+    <string name="marcadores_title">Marcadores</string>
+    <string name="marcadores_subtitle">Resultados y clasificaciones aparecerán aquí.</string>
+    <string name="marcadores_predictions_title">Predicciones de fase de grupos</string>
+    <string name="marcadores_predictions_subtitle">Ingresa tus marcadores y sube en el ranking.</string>
+    <string name="marcadores_group">Grupo %1$s</string>
+    <string name="marcadores_status_pending">Sin ingresar</string>
+    <string name="marcadores_status_entered">Ingresado</string>
+    <string name="marcadores_status_finished">Finalizado</string>
+    <string name="opciones_title">Opciones</string>
+    <string name="opciones_biometric">Iniciar sesión con huella</string>
+    <string name="opciones_biometric_hint">Usa tu huella para acceder más rápido</string>
+    <string name="opciones_logout">Cerrar sesión</string>
+</resources>
