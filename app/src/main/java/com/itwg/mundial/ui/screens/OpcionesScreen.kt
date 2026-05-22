@@ -35,9 +35,13 @@ import com.itwg.mundial.ui.theme.MutedRose
 import com.itwg.mundial.ui.theme.Pearl
 
 @Composable
-fun OpcionesScreen(modifier: Modifier = Modifier) {
-    var biometricEnabled by remember { mutableStateOf(false) }
-
+fun OpcionesScreen(
+    biometricEnabled: Boolean,
+    onBiometricToggle: (Boolean) -> Unit,
+    biometricMessage: String?,
+    modifier: Modifier = Modifier,
+    onLogout: () -> Unit = {},
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -87,7 +91,7 @@ fun OpcionesScreen(modifier: Modifier = Modifier) {
                 }
                 Switch(
                     checked = biometricEnabled,
-                    onCheckedChange = { biometricEnabled = it },
+                    onCheckedChange = onBiometricToggle,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Pearl,
                         checkedTrackColor = Midnight,
@@ -98,10 +102,18 @@ fun OpcionesScreen(modifier: Modifier = Modifier) {
             }
         }
 
+        if (!biometricMessage.isNullOrBlank()) {
+            Text(
+                text = biometricMessage,
+                style = MaterialTheme.typography.bodySmall,
+                color = MutedRose,
+            )
+        }
+
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         TextButton(
-            onClick = { },
+            onClick = onLogout,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
@@ -127,6 +139,10 @@ fun OpcionesScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun OpcionesScreenPreview() {
     MundialTheme {
-        OpcionesScreen()
+        OpcionesScreen(
+            biometricEnabled = true,
+            onBiometricToggle = {},
+            biometricMessage = null,
+        )
     }
 }
