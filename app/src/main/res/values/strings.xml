@@ -21,6 +21,9 @@
     <string name="marcadores_status_pending">Sin ingresar</string>
     <string name="marcadores_status_entered">Ingresado</string>
     <string name="marcadores_status_finished">Finalizado</string>
+    <string name="marcadores_retry">Reintentar</string>
+    <string name="marcadores_empty">No hay partidos disponibles.</string>
+    <string name="marcadores_no_matches_group">No hay partidos en este grupo.</string>
     <string name="opciones_title">Opciones</string>
     <string name="opciones_biometric">Iniciar sesión con huella</string>
     <string name="opciones_biometric_hint">Usa tu huella para acceder más rápido</string>

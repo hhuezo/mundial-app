@@ -213,63 +213,74 @@ fun AppRoot() {
                 )
             },
         )
-        AuthGate.LOGGED_IN -> MundialApp(
-            biometricEnabled = biometricEnabled,
-            onBiometricToggle = { enabled ->
-                opcionesBiometricMessage = null
-                if (enabled) {
-                    scope.launch {
-                        if (!authRepository.hasStoredCredentials()) {
-                            opcionesBiometricMessage =
-                                context.getString(R.string.biometric_enable_requires_login)
-                            return@launch
+        AuthGate.LOGGED_IN -> {
+            var loggedInUserId by remember { mutableStateOf<Long?>(null) }
+            LaunchedEffect(Unit) {
+                loggedInUserId = authRepository.getSession()?.userId
+                    ?: authRepository.getStoredUserProfile()?.userId
+            }
+            val userId = loggedInUserId
+            if (userId != null) {
+                MundialApp(
+                    userId = userId,
+                    biometricEnabled = biometricEnabled,
+                    onBiometricToggle = { enabled ->
+                        opcionesBiometricMessage = null
+                        if (enabled) {
+                            scope.launch {
+                                if (!authRepository.hasStoredCredentials()) {
+                                    opcionesBiometricMessage =
+                                        context.getString(R.string.biometric_enable_requires_login)
+                                    return@launch
+                                }
+                                when (biometricHelper.availability()) {
+                                    BiometricAvailability.Available -> {
+                                        biometricHelper.authenticate(
+                                            onSuccess = {
+                                                scope.launch {
+                                                    authRepository.setBiometricEnabled(true)
+                                                    biometricEnabled = true
+                                                }
+                                            },
+                                            onError = { msg -> opcionesBiometricMessage = msg },
+                                        )
+                                    }
+                                    BiometricAvailability.NoHardware -> {
+                                        opcionesBiometricMessage =
+                                            context.getString(R.string.biometric_error_no_hardware)
+                                    }
+                                    BiometricAvailability.NotEnrolled -> {
+                                        opcionesBiometricMessage =
+                                            context.getString(R.string.biometric_error_not_enrolled)
+                                    }
+                                    BiometricAvailability.Unavailable -> {
+                                        opcionesBiometricMessage =
+                                            context.getString(R.string.biometric_error_generic)
+                                    }
+                                }
+                            }
+                        } else {
+                            scope.launch {
+                                authRepository.setBiometricEnabled(false)
+                                biometricEnabled = false
+                            }
                         }
-                        when (biometricHelper.availability()) {
-                            BiometricAvailability.Available -> {
-                                biometricHelper.authenticate(
-                                    onSuccess = {
-                                        scope.launch {
-                                            authRepository.setBiometricEnabled(true)
-                                            biometricEnabled = true
-                                        }
-                                    },
-                                    onError = { msg -> opcionesBiometricMessage = msg },
-                                )
-                            }
-                            BiometricAvailability.NoHardware -> {
-                                opcionesBiometricMessage =
-                                    context.getString(R.string.biometric_error_no_hardware)
-                            }
-                            BiometricAvailability.NotEnrolled -> {
-                                opcionesBiometricMessage =
-                                    context.getString(R.string.biometric_error_not_enrolled)
-                            }
-                            BiometricAvailability.Unavailable -> {
-                                opcionesBiometricMessage =
-                                    context.getString(R.string.biometric_error_generic)
-                            }
+                    },
+                    biometricMessage = opcionesBiometricMessage,
+                    onLogout = {
+                        scope.launch {
+                            authRepository.lockSession()
+                            hasStoredCredentials = authRepository.hasStoredCredentials()
+                            deviceBiometricAvailable =
+                                biometricHelper.availability() == BiometricAvailability.Available
+                            loginBiometricError = null
+                            biometricError = null
+                            authGate = AuthGate.LOGIN
                         }
-                    }
-                } else {
-                    scope.launch {
-                        authRepository.setBiometricEnabled(false)
-                        biometricEnabled = false
-                    }
-                }
-            },
-            biometricMessage = opcionesBiometricMessage,
-            onLogout = {
-                scope.launch {
-                    authRepository.lockSession()
-                    hasStoredCredentials = authRepository.hasStoredCredentials()
-                    deviceBiometricAvailable =
-                        biometricHelper.availability() == BiometricAvailability.Available
-                    loginBiometricError = null
-                    biometricError = null
-                    authGate = AuthGate.LOGIN
-                }
-            },
-        )
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -277,6 +288,7 @@ fun AppRoot() {
 @PreviewScreenSizes
 @Composable
 fun MundialApp(
+    userId: Long,
     biometricEnabled: Boolean = false,
     onBiometricToggle: (Boolean) -> Unit = {},
     biometricMessage: String? = null,
@@ -323,7 +335,10 @@ fun MundialApp(
             val screenModifier = Modifier.padding(innerPadding)
             when (currentDestination) {
                 AppDestinations.HOME -> HomeScreen(modifier = screenModifier)
-                AppDestinations.MARCADORES -> MarcadoresScreen(modifier = screenModifier)
+                AppDestinations.MARCADORES -> MarcadoresScreen(
+                    userId = userId,
+                    modifier = screenModifier,
+                )
                 AppDestinations.OPCIONES -> OpcionesScreen(
                     modifier = screenModifier,
                     biometricEnabled = biometricEnabled,

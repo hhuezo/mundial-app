@@ -18,9 +18,13 @@ data class MatchPrediction(
     val awayTeam: String,
     val dateTime: String,
     val venue: String,
+    val homeFlagUrl: String? = null,
+    val awayFlagUrl: String? = null,
     val isFinished: Boolean = false,
     val finalHomeScore: Int? = null,
     val finalAwayScore: Int? = null,
+    val predictionHomeScore: Int? = null,
+    val predictionAwayScore: Int? = null,
 )
 
 fun resolveMatchStatus(

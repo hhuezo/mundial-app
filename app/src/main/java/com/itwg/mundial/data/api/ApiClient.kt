@@ -36,14 +36,17 @@ object ApiClient {
         )
         .build()
 
-    val authApi: AuthApi by lazy {
+    private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(ApiConfig.baseUrl)
             .client(httpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
-            .create(AuthApi::class.java)
     }
+
+    val authApi: AuthApi by lazy { retrofit.create(AuthApi::class.java) }
+
+    val marcadoresApi: MarcadoresApi by lazy { retrofit.create(MarcadoresApi::class.java) }
 
     val validationErrorAdapter =
         moshi.adapter(com.itwg.mundial.data.model.ValidationErrorResponse::class.java)

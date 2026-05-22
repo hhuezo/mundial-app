@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,11 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.itwg.mundial.model.MatchPrediction
 import com.itwg.mundial.model.resolveMatchStatus
 import com.itwg.mundial.model.stripeColor
@@ -118,7 +121,11 @@ fun MatchPredictionCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    TeamColumn(name = match.homeTeam, modifier = Modifier.weight(1f))
+                    TeamColumn(
+                        name = match.homeTeam,
+                        flagUrl = match.homeFlagUrl,
+                        modifier = Modifier.weight(1f),
+                    )
                     ScoreSection(
                         homeScore = displayHome,
                         awayScore = displayAway,
@@ -128,6 +135,7 @@ fun MatchPredictionCard(
                     )
                     TeamColumn(
                         name = match.awayTeam,
+                        flagUrl = match.awayFlagUrl,
                         modifier = Modifier.weight(1f),
                         alignEnd = true,
                     )
@@ -149,6 +157,7 @@ fun MatchPredictionCard(
 @Composable
 private fun TeamColumn(
     name: String,
+    flagUrl: String?,
     modifier: Modifier = Modifier,
     alignEnd: Boolean = false,
 ) {
@@ -157,20 +166,7 @@ private fun TeamColumn(
         horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(52.dp)
-                .clip(CircleShape)
-                .background(Linen),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = name.take(3).uppercase(),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
+        TeamFlag(name = name, flagUrl = flagUrl)
         Text(
             text = name.uppercase(),
             style = MaterialTheme.typography.labelMedium,
@@ -178,6 +174,39 @@ private fun TeamColumn(
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = if (alignEnd) TextAlign.End else TextAlign.Start,
         )
+    }
+}
+
+@Composable
+private fun TeamFlag(
+    name: String,
+    flagUrl: String?,
+) {
+    Box(
+        modifier = Modifier
+            .size(52.dp)
+            .clip(CircleShape)
+            .background(Linen)
+            .border(1.dp, Sand, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (!flagUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = flagUrl,
+                contentDescription = name,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            Text(
+                text = name.take(3).uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 
@@ -287,6 +316,8 @@ private fun MatchPredictionCardPreview() {
                     group = "A",
                     homeTeam = "México",
                     awayTeam = "EE.UU.",
+                    homeFlagUrl = "https://flagcdn.com/w320/mx.png",
+                    awayFlagUrl = "https://flagcdn.com/w320/us.png",
                     dateTime = "12 jun • 18:00",
                     venue = "Estadio Azteca",
                 ),
