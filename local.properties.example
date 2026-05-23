@@ -1,8 +1,6 @@
 # Copia este archivo a local.properties (o agrega estas líneas a tu local.properties existente).
 # local.properties no se sube a git.
 
-# URL base de la API (debe terminar con /). HTTP está permitido en la app.
-# Emulador → PC local:
-# api.base.url=http://10.0.2.2:8000/api/
-# Servidor en red (IP de tu máquina o VPS):
-api.base.url=http://192.162.20.95:8000/api/
+# URL base de la API: edita app/src/main/java/com/itwg/mundial/config/ApiConfig.kt
+# Emulador → PC local: http://10.0.2.2:8000/api/
+# Dispositivo físico / red local: http://192.168.x.x:8000/api/

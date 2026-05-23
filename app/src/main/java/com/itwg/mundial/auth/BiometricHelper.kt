@@ -4,8 +4,6 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import com.itwg.mundial.R
-
 class BiometricHelper(
     private val activity: FragmentActivity,
 ) {
@@ -31,15 +29,15 @@ class BiometricHelper(
     ) {
         when (val status = availability()) {
             BiometricAvailability.NoHardware -> {
-                onError(activity.getString(R.string.biometric_error_no_hardware))
+                onError("Este dispositivo no tiene lector de huella.")
                 return
             }
             BiometricAvailability.NotEnrolled -> {
-                onError(activity.getString(R.string.biometric_error_not_enrolled))
+                onError("Registra una huella en Ajustes del teléfono primero.")
                 return
             }
             BiometricAvailability.Unavailable -> {
-                onError(activity.getString(R.string.biometric_error_generic))
+                onError("No se pudo verificar la huella.")
                 return
             }
             BiometricAvailability.Available -> Unit
@@ -70,9 +68,9 @@ class BiometricHelper(
         )
 
         val info = BiometricPrompt.PromptInfo.Builder()
-            .setTitle(activity.getString(R.string.biometric_prompt_title))
-            .setSubtitle(activity.getString(R.string.biometric_prompt_subtitle))
-            .setNegativeButtonText(activity.getString(android.R.string.cancel))
+            .setTitle("Desbloquear Mundial")
+            .setSubtitle("Usa tu huella para continuar")
+            .setNegativeButtonText("Cancelar")
             .setAllowedAuthenticators(authenticators)
             .build()
 

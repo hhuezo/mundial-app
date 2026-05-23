@@ -25,10 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.itwg.mundial.R
 import com.itwg.mundial.ui.theme.Midnight
 import com.itwg.mundial.ui.theme.MundialTheme
 import com.itwg.mundial.ui.theme.MutedRose
@@ -49,7 +47,7 @@ fun OpcionesScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = stringResource(R.string.opciones_title),
+            text = "Opciones",
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -78,12 +76,12 @@ fun OpcionesScreen(
                     )
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            text = stringResource(R.string.opciones_biometric),
+                            text = "Iniciar sesión con huella",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            text = stringResource(R.string.opciones_biometric_hint),
+                            text = "Usa tu huella para acceder más rápido",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -126,7 +124,7 @@ fun OpcionesScreen(
                     tint = MutedRose,
                 )
                 Text(
-                    text = stringResource(R.string.opciones_logout),
+                    text = "Cerrar sesión",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MutedRose,
                 )

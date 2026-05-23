@@ -1,19 +1,8 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
-
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.inputStream().use { localProperties.load(it) }
-}
-
-val apiBaseUrl: String = localProperties.getProperty("api.base.url")
-    ?: "http://192.162.20.95:8000/api/"
 
 android {
     namespace = "com.itwg.mundial"
@@ -50,32 +39,6 @@ android {
     buildFeatures {
         compose = true
     }
-}
-
-val apiConfigFile = file("src/main/java/com/itwg/mundial/config/ApiConfig.kt")
-
-tasks.register("generateApiConfig") {
-    doLast {
-        val escapedUrl = apiBaseUrl.replace("\\", "\\\\").replace("\"", "\\\"")
-        apiConfigFile.parentFile.mkdirs()
-        apiConfigFile.writeText(
-            """
-            package com.itwg.mundial.config
-
-            /**
-             * Generado desde local.properties (api.base.url). No editar a mano.
-             * Ver local.properties.example en la raíz del proyecto.
-             */
-            object ApiConfig {
-                const val baseUrl: String = "$escapedUrl"
-            }
-            """.trimIndent() + "\n",
-        )
-    }
-}
-
-tasks.named("preBuild") {
-    dependsOn("generateApiConfig")
 }
 
 dependencies {

@@ -32,12 +32,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.itwg.mundial.R
 import com.itwg.mundial.ui.components.MatchPredictionCard
 import com.itwg.mundial.ui.marcadores.MarcadoresViewModel
 import com.itwg.mundial.ui.marcadores.MarcadoresViewModelFactory
@@ -111,7 +109,7 @@ fun MarcadoresScreen(
                         contentColor = Pearl,
                     ),
                 ) {
-                    Text(stringResource(R.string.marcadores_retry))
+                    Text("Reintentar")
                 }
             }
         }
@@ -121,7 +119,7 @@ fun MarcadoresScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = stringResource(R.string.marcadores_empty),
+                    text = "No hay partidos disponibles.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -142,12 +140,12 @@ fun MarcadoresScreen(
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
-                            text = stringResource(R.string.marcadores_predictions_title),
+                            text = "Predicciones de fase de grupos",
                             style = MaterialTheme.typography.headlineSmall,
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                         Text(
-                            text = stringResource(R.string.marcadores_predictions_subtitle),
+                            text = "Ingresa tus marcadores y sube en el ranking.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -170,7 +168,7 @@ fun MarcadoresScreen(
                                 selected = selectedGroup == group,
                                 onClick = { viewModel.selectGroup(group) },
                                 label = {
-                                    Text(stringResource(R.string.marcadores_group, group))
+                                    Text("Grupo $group")
                                 },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = Midnight,
@@ -186,7 +184,7 @@ fun MarcadoresScreen(
                 if (uiState.matches.isEmpty()) {
                     item {
                         Text(
-                            text = stringResource(R.string.marcadores_no_matches_group),
+                            text = "No hay partidos en este grupo.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = 8.dp),
@@ -226,15 +224,15 @@ private fun MarcadorStatusLegend(modifier: Modifier = Modifier) {
         ) {
             LegendItem(
                 color = MarkerPending,
-                label = stringResource(R.string.marcadores_status_pending),
+                label = "Sin ingresar",
             )
             LegendItem(
                 color = MarkerEntered,
-                label = stringResource(R.string.marcadores_status_entered),
+                label = "Ingresado",
             )
             LegendItem(
                 color = MarkerFinished,
-                label = stringResource(R.string.marcadores_status_finished),
+                label = "Finalizado",
             )
         }
     }

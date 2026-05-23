@@ -1,6 +1,7 @@
 package com.itwg.mundial.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,8 +38,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -82,25 +84,29 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.headlineLarge,
-            color = Midnight,
+        Image(
+            painter = painterResource(R.drawable.mundial),
+            contentDescription = "Mundial",
+            modifier = Modifier
+                .fillMaxWidth(0.55f)
+                .padding(bottom = 14.dp),
+            contentScale = ContentScale.Fit,
         )
+
         Text(
-            text = stringResource(R.string.login_subtitle),
+            text = "Inicia sesión para continuar",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp, bottom = 40.dp),
+            modifier = Modifier.padding(top = 8.dp, bottom = 20.dp),
         )
 
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.login_email)) },
-            placeholder = { Text(stringResource(R.string.login_email_hint)) },
+            label = { Text("Correo electrónico") },
+            placeholder = { Text("tu@correo.com") },
             singleLine = true,
             enabled = !isLoading,
             keyboardOptions = KeyboardOptions(
@@ -119,8 +125,8 @@ fun LoginScreen(
             value = password,
             onValueChange = { password = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.login_password)) },
-            placeholder = { Text(stringResource(R.string.login_password_hint)) },
+            label = { Text("Contraseña") },
+            placeholder = { Text("••••••••") },
             singleLine = true,
             enabled = !isLoading,
             visualTransformation = if (passwordVisible) {
@@ -141,13 +147,7 @@ fun LoginScreen(
                     enabled = !isLoading,
                 ) {
                     Text(
-                        text = stringResource(
-                            if (passwordVisible) {
-                                R.string.login_hide_password
-                            } else {
-                                R.string.login_show_password
-                            },
-                        ),
+                        text = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña",
                         style = MaterialTheme.typography.labelSmall,
                         color = Midnight,
                     )
@@ -188,7 +188,7 @@ fun LoginScreen(
                 )
             } else {
                 Text(
-                    text = stringResource(R.string.login_button),
+                    text = "Iniciar sesión",
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
@@ -215,7 +215,7 @@ private fun LoginBiometricDivider() {
     ) {
         HorizontalDivider(modifier = Modifier.weight(1f))
         Text(
-            text = stringResource(R.string.login_or),
+            text = "o",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -249,7 +249,7 @@ private fun BiometricLoginButton(
             tint = Midnight,
         )
         Text(
-            text = stringResource(R.string.biometric_unlock_button),
+            text = "Iniciar con huella",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(start = 12.dp),

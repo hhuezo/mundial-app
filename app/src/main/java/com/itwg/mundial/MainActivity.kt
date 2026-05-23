@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Home
@@ -42,7 +41,6 @@ import com.itwg.mundial.ui.auth.LoginViewModel
 import com.itwg.mundial.ui.auth.LoginViewModelFactory
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.tooling.preview.Preview
@@ -117,7 +115,7 @@ fun AppRoot() {
                         },
                         onFailure = { error ->
                             val message = error.message
-                                ?: context.getString(R.string.biometric_error_generic)
+                                ?: "No se pudo verificar la huella."
                             biometricError = message
                             if (reportErrorOnLogin) {
                                 loginBiometricError = message
@@ -230,7 +228,7 @@ fun AppRoot() {
                             scope.launch {
                                 if (!authRepository.hasStoredCredentials()) {
                                     opcionesBiometricMessage =
-                                        context.getString(R.string.biometric_enable_requires_login)
+                                        "Inicia sesión con correo antes de activar la huella."
                                     return@launch
                                 }
                                 when (biometricHelper.availability()) {
@@ -247,15 +245,15 @@ fun AppRoot() {
                                     }
                                     BiometricAvailability.NoHardware -> {
                                         opcionesBiometricMessage =
-                                            context.getString(R.string.biometric_error_no_hardware)
+                                            "Este dispositivo no tiene lector de huella."
                                     }
                                     BiometricAvailability.NotEnrolled -> {
                                         opcionesBiometricMessage =
-                                            context.getString(R.string.biometric_error_not_enrolled)
+                                            "Registra una huella en Ajustes del teléfono primero."
                                     }
                                     BiometricAvailability.Unavailable -> {
                                         opcionesBiometricMessage =
-                                            context.getString(R.string.biometric_error_generic)
+                                            "No se pudo verificar la huella."
                                     }
                                 }
                             }
@@ -303,10 +301,10 @@ fun MundialApp(
                     icon = {
                         Icon(
                             it.icon,
-                            contentDescription = stringResource(it.labelRes),
+                            contentDescription = it.label,
                         )
                     },
-                    label = { Text(stringResource(it.labelRes)) },
+                    label = { Text(it.label) },
                     selected = it == currentDestination,
                     onClick = { currentDestination = it }
                 )
@@ -320,7 +318,7 @@ fun MundialApp(
                     modifier = Modifier.height(56.dp),
                     title = {
                         Text(
-                            text = stringResource(currentDestination.labelRes),
+                            text = currentDestination.label,
                             style = MaterialTheme.typography.titleMedium,
                         )
                     },
@@ -352,10 +350,10 @@ fun MundialApp(
 }
 
 enum class AppDestinations(
-    @StringRes val labelRes: Int,
+    val label: String,
     val icon: ImageVector,
 ) {
-    HOME(R.string.nav_home, Icons.Default.Home),
-    MARCADORES(R.string.nav_marcadores, Icons.Default.List),
-    OPCIONES(R.string.nav_opciones, Icons.Default.Settings),
+    HOME("Home", Icons.Default.Home),
+    MARCADORES("Marcadores", Icons.Default.List),
+    OPCIONES("Opciones", Icons.Default.Settings),
 }
