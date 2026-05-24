@@ -15,7 +15,16 @@ import androidx.compose.ui.unit.dp
 import com.itwg.mundial.ui.theme.MundialTheme
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun HomeScreen(
+    userId: Long,
+    userName: String?,
+    modifier: Modifier = Modifier,
+) {
+    val displayName = userName?.takeIf { it.isNotBlank() }
+    val welcomeText = when {
+        displayName != null -> "Bienvenido, $displayName"
+        else -> "Bienvenido al Mundial"
+    }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -24,10 +33,17 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "Bienvenido al Mundial",
+            text = welcomeText,
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
+        )
+        Text(
+            text = "ID $userId",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp),
         )
         Text(
             text = "Partidos, equipos y todo lo que necesitas del torneo.",
@@ -43,6 +59,6 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun HomeScreenPreview() {
     MundialTheme {
-        HomeScreen()
+        HomeScreen(userId = 1L, userName = "Juan")
     }
 }

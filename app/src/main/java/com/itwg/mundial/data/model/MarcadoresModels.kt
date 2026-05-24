@@ -16,6 +16,9 @@ data class PartidoDto(
     @Json(name = "fase_id") val faseId: Long,
     @Json(name = "marcador_pais1") val marcadorPais1: Int?,
     @Json(name = "marcador_pais2") val marcadorPais2: Int?,
+    @Json(name = "marcadorUsuario_pais1") val marcadorUsuarioPais1: Int?,
+    @Json(name = "marcadorUsuario_pais2") val marcadorUsuarioPais2: Int?,
+    val valor: String? = null,
     val finalizado: Boolean,
     val pais1: PaisDto,
     val pais2: PaisDto,
@@ -32,4 +35,11 @@ data class PaisDto(
 data class FaseDto(
     val id: Long,
     val nombre: String,
+)
+
+data class UpdateMarcadorRequest(
+    @Json(name = "userId") val userId: Long,
+    @Json(name = "unidad_id") val unidadId: Long,
+    @Json(name = "marcador_pais1") val marcadorPais1: Int,
+    @Json(name = "marcador_pais2") val marcadorPais2: Int,
 )

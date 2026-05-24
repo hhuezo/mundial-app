@@ -25,6 +25,7 @@ class SessionStore(context: Context) {
         return UserSession(
             userId = userId,
             token = token,
+            userName = prefs[KEY_USER_NAME],
             unidadId = prefs[KEY_UNIDAD_ID],
             unidadNombre = prefs[KEY_UNIDAD_NOMBRE],
         )
@@ -35,17 +36,29 @@ class SessionStore(context: Context) {
         val userId = prefs[KEY_USER_ID] ?: return null
         return StoredUserProfile(
             userId = userId,
+            userName = prefs[KEY_USER_NAME],
             unidadId = prefs[KEY_UNIDAD_ID],
             unidadNombre = prefs[KEY_UNIDAD_NOMBRE],
         )
     }
 
     suspend fun saveSession(session: UserSession) {
+        replaceSession(session)
+    }
+
+    /** Sobrescribe por completo los datos de sesión (conserva solo la preferencia de huella). */
+    suspend fun replaceSession(session: UserSession) {
         dataStore.edit { prefs ->
+            prefs.remove(KEY_TOKEN)
+            prefs.remove(KEY_USER_ID)
+            prefs.remove(KEY_USER_NAME)
+            prefs.remove(KEY_UNIDAD_ID)
+            prefs.remove(KEY_UNIDAD_NOMBRE)
             prefs[KEY_TOKEN] = session.token
             prefs[KEY_USER_ID] = session.userId
-            session.unidadId?.let { prefs[KEY_UNIDAD_ID] = it } ?: prefs.remove(KEY_UNIDAD_ID)
-            session.unidadNombre?.let { prefs[KEY_UNIDAD_NOMBRE] = it } ?: prefs.remove(KEY_UNIDAD_NOMBRE)
+            session.userName?.let { prefs[KEY_USER_NAME] = it }
+            session.unidadId?.let { prefs[KEY_UNIDAD_ID] = it }
+            session.unidadNombre?.let { prefs[KEY_UNIDAD_NOMBRE] = it }
         }
     }
 
@@ -60,6 +73,7 @@ class SessionStore(context: Context) {
         dataStore.edit { prefs ->
             prefs.remove(KEY_TOKEN)
             prefs.remove(KEY_USER_ID)
+            prefs.remove(KEY_USER_NAME)
             prefs.remove(KEY_UNIDAD_ID)
             prefs.remove(KEY_UNIDAD_NOMBRE)
             prefs.remove(KEY_BIOMETRIC_ENABLED)
@@ -88,6 +102,7 @@ class SessionStore(context: Context) {
     companion object {
         private val KEY_TOKEN = stringPreferencesKey("token")
         private val KEY_USER_ID = longPreferencesKey("user_id")
+        private val KEY_USER_NAME = stringPreferencesKey("user_name")
         private val KEY_UNIDAD_ID = longPreferencesKey("unidad_id")
         private val KEY_UNIDAD_NOMBRE = stringPreferencesKey("unidad_nombre")
         private val KEY_BIOMETRIC_ENABLED = booleanPreferencesKey("biometric_enabled")

@@ -16,14 +16,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,10 +32,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -43,6 +42,7 @@ import com.itwg.mundial.model.MatchPrediction
 import com.itwg.mundial.model.resolveMatchStatus
 import com.itwg.mundial.model.stripeColor
 import com.itwg.mundial.ui.theme.Linen
+import com.itwg.mundial.ui.theme.Midnight
 import com.itwg.mundial.ui.theme.MundialTheme
 import com.itwg.mundial.ui.theme.Pearl
 import com.itwg.mundial.ui.theme.Sand
@@ -52,21 +52,20 @@ fun MatchPredictionCard(
     match: MatchPrediction,
     homeScore: String,
     awayScore: String,
-    onHomeScoreChange: (String) -> Unit,
-    onAwayScoreChange: (String) -> Unit,
+    onStatsClick: () -> Unit,
+    onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val status = resolveMatchStatus(match, homeScore, awayScore)
     val stripeColor = status.stripeColor()
-    val displayHome = if (match.isFinished) {
-        match.finalHomeScore?.toString() ?: "-"
+    val displayHome = userPredictionDisplay(homeScore, match.predictionHomeScore)
+    val displayAway = userPredictionDisplay(awayScore, match.predictionAwayScore)
+    val officialFinalScoreText = if (match.isFinished) {
+        val home = match.finalHomeScore?.toString() ?: "-"
+        val away = match.finalAwayScore?.toString() ?: "-"
+        "$home : $away"
     } else {
-        homeScore
-    }
-    val displayAway = if (match.isFinished) {
-        match.finalAwayScore?.toString() ?: "-"
-    } else {
-        awayScore
+        null
     }
 
     Card(
@@ -129,9 +128,8 @@ fun MatchPredictionCard(
                     ScoreSection(
                         homeScore = displayHome,
                         awayScore = displayAway,
-                        isFinished = match.isFinished,
-                        onHomeScoreChange = onHomeScoreChange,
-                        onAwayScoreChange = onAwayScoreChange,
+                        homeIsPlaceholder = !match.isFinished && homeScore.isBlank(),
+                        awayIsPlaceholder = !match.isFinished && awayScore.isBlank(),
                     )
                     TeamColumn(
                         name = match.awayTeam,
@@ -142,16 +140,92 @@ fun MatchPredictionCard(
                 }
 
                 HorizontalDivider(color = Sand.copy(alpha = 0.6f))
-                Text(
-                    text = match.venue,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
+                MatchCardActionsRow(
+                    venue = match.venue,
+                    isFinished = match.isFinished,
+                    finalScoreText = officialFinalScoreText,
+                    canEdit = !match.isFinished,
+                    onStatsClick = onStatsClick,
+                    onEditClick = onEditClick,
                 )
             }
         }
     }
+}
+
+@Composable
+private fun MatchCardActionsRow(
+    venue: String,
+    isFinished: Boolean,
+    finalScoreText: String?,
+    canEdit: Boolean,
+    onStatsClick: () -> Unit,
+    onEditClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        IconButton(
+            onClick = onStatsClick,
+            modifier = Modifier.size(40.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.BarChart,
+                contentDescription = "Ver estadísticas del partido",
+                tint = Midnight,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            when {
+                isFinished && !finalScoreText.isNullOrBlank() -> {
+                    Text(
+                        text = finalScoreText,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                !isFinished -> {
+                    Text(
+                        text = venue,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+        IconButton(
+            onClick = onEditClick,
+            enabled = canEdit,
+            modifier = Modifier.size(40.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Edit,
+                contentDescription = "Editar marcador",
+                tint = if (canEdit) {
+                    Midnight
+                } else {
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                },
+            )
+        }
+    }
+}
+
+private fun String.toScoreLabel(): String = if (isBlank()) "0" else this
+
+private fun userPredictionDisplay(localScore: String, apiScore: Int?): String {
+    val value = localScore.ifBlank { apiScore?.toString().orEmpty() }
+    return value.toScoreLabel()
 }
 
 @Composable
@@ -214,54 +288,29 @@ private fun TeamFlag(
 private fun ScoreSection(
     homeScore: String,
     awayScore: String,
-    isFinished: Boolean,
-    onHomeScoreChange: (String) -> Unit,
-    onAwayScoreChange: (String) -> Unit,
+    homeIsPlaceholder: Boolean,
+    awayIsPlaceholder: Boolean,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (isFinished) {
-            FinishedScoreBox(score = homeScore)
-            Text(
-                text = ":",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.outline,
-            )
-            FinishedScoreBox(score = awayScore)
-        } else {
-            ScoreInput(value = homeScore, onValueChange = onHomeScoreChange)
-            Text(
-                text = ":",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.outline,
-            )
-            ScoreInput(value = awayScore, onValueChange = onAwayScoreChange)
-        }
+        ScoreLabel(score = homeScore, isPlaceholder = homeIsPlaceholder)
+        Text(
+            text = ":",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.outline,
+        )
+        ScoreLabel(score = awayScore, isPlaceholder = awayIsPlaceholder)
     }
 }
 
 @Composable
-private fun ScoreInput(
-    value: String,
-    onValueChange: (String) -> Unit,
+private fun ScoreLabel(
+    score: String,
+    isPlaceholder: Boolean,
 ) {
-    BasicTextField(
-        value = value,
-        onValueChange = { new ->
-            if (new.length <= 2 && (new.isEmpty() || new.all { it.isDigit() })) {
-                onValueChange(new)
-            }
-        },
-        singleLine = true,
-        textStyle = MaterialTheme.typography.titleLarge.copy(
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.SemiBold,
-        ),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+    Box(
         modifier = Modifier
             .size(52.dp)
             .clip(RoundedCornerShape(12.dp))
@@ -271,35 +320,16 @@ private fun ScoreInput(
                 color = Sand,
                 shape = RoundedCornerShape(12.dp),
             ),
-        decorationBox = { inner ->
-            Box(contentAlignment = Alignment.Center) {
-                if (value.isEmpty()) {
-                    Text(
-                        text = "0",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-                inner()
-            }
-        },
-    )
-}
-
-@Composable
-private fun FinishedScoreBox(score: String) {
-    Box(
-        modifier = Modifier
-            .size(52.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Linen),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = score,
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.primary,
+            color = if (isPlaceholder) {
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+            } else {
+                MaterialTheme.colorScheme.primary
+            },
             fontWeight = FontWeight.SemiBold,
         )
     }
@@ -323,8 +353,8 @@ private fun MatchPredictionCardPreview() {
                 ),
                 homeScore = "2",
                 awayScore = "1",
-                onHomeScoreChange = {},
-                onAwayScoreChange = {},
+                onStatsClick = {},
+                onEditClick = {},
             )
             MatchPredictionCard(
                 match = MatchPrediction(
@@ -340,8 +370,8 @@ private fun MatchPredictionCardPreview() {
                 ),
                 homeScore = "",
                 awayScore = "",
-                onHomeScoreChange = {},
-                onAwayScoreChange = {},
+                onStatsClick = {},
+                onEditClick = {},
             )
         }
     }

@@ -95,7 +95,18 @@ fun AppRoot() {
     var hasStoredCredentials by remember { mutableStateOf(false) }
     var deviceBiometricAvailable by remember { mutableStateOf(false) }
     var opcionesBiometricMessage by remember { mutableStateOf<String?>(null) }
+    var loggedInUserId by remember { mutableStateOf<Long?>(null) }
+    var loggedInUserName by remember { mutableStateOf<String?>(null) }
+    var loggedInUnidadId by remember { mutableStateOf<Long?>(null) }
     val scope = rememberCoroutineScope()
+
+    suspend fun refreshLoggedInSession() {
+        val session = authRepository.getSession()
+        val profile = authRepository.getStoredUserProfile()
+        loggedInUserId = session?.userId ?: profile?.userId
+        loggedInUserName = session?.userName ?: profile?.userName
+        loggedInUnidadId = session?.unidadId ?: profile?.unidadId
+    }
 
     val canLoginWithBiometric =
         deviceBiometricAvailable && hasStoredCredentials && !loginUiState.isLoading
@@ -167,11 +178,18 @@ fun AppRoot() {
         }
     }
 
+    LaunchedEffect(authGate) {
+        if (authGate == AuthGate.LOGGED_IN) {
+            refreshLoggedInSession()
+        }
+    }
+
     LaunchedEffect(loginUiState.loginSuccess) {
         if (loginUiState.loginSuccess) {
             authGate = AuthGate.LOGGED_IN
             hasStoredCredentials = true
             biometricEnabled = authRepository.isBiometricEnabled()
+            refreshLoggedInSession()
             loginViewModel.consumeLoginSuccess()
         }
     }
@@ -212,15 +230,12 @@ fun AppRoot() {
             },
         )
         AuthGate.LOGGED_IN -> {
-            var loggedInUserId by remember { mutableStateOf<Long?>(null) }
-            LaunchedEffect(Unit) {
-                loggedInUserId = authRepository.getSession()?.userId
-                    ?: authRepository.getStoredUserProfile()?.userId
-            }
             val userId = loggedInUserId
             if (userId != null) {
                 MundialApp(
                     userId = userId,
+                    userName = loggedInUserName,
+                    unidadId = loggedInUnidadId,
                     biometricEnabled = biometricEnabled,
                     onBiometricToggle = { enabled ->
                         opcionesBiometricMessage = null
@@ -287,6 +302,8 @@ fun AppRoot() {
 @Composable
 fun MundialApp(
     userId: Long,
+    userName: String? = null,
+    unidadId: Long? = null,
     biometricEnabled: Boolean = false,
     onBiometricToggle: (Boolean) -> Unit = {},
     biometricMessage: String? = null,
@@ -332,9 +349,14 @@ fun MundialApp(
         ) { innerPadding ->
             val screenModifier = Modifier.padding(innerPadding)
             when (currentDestination) {
-                AppDestinations.HOME -> HomeScreen(modifier = screenModifier)
+                AppDestinations.HOME -> HomeScreen(
+                    userId = userId,
+                    userName = userName,
+                    modifier = screenModifier,
+                )
                 AppDestinations.MARCADORES -> MarcadoresScreen(
                     userId = userId,
+                    unidadId = unidadId,
                     modifier = screenModifier,
                 )
                 AppDestinations.OPCIONES -> OpcionesScreen(

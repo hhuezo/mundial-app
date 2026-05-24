@@ -18,10 +18,13 @@ data class MarcadoresUiState(
     val matches: List<MatchPrediction> = emptyList(),
     val initialScores: Map<String, Pair<String, String>> = emptyMap(),
     val errorMessage: String? = null,
+    val isSavingMarcador: Boolean = false,
+    val saveMarcadorError: String? = null,
 )
 
 class MarcadoresViewModel(
     private val userId: Long,
+    private val unidadId: Long?,
     private val repository: MarcadoresRepository = MarcadoresRepository(),
 ) : ViewModel() {
 
@@ -73,6 +76,88 @@ class MarcadoresViewModel(
         }
     }
 
+    fun clearSaveMarcadorError() {
+        _uiState.update { it.copy(saveMarcadorError = null) }
+    }
+
+    fun saveMarcador(
+        partidoId: String,
+        homeScore: String,
+        awayScore: String,
+        onSuccess: () -> Unit,
+    ) {
+        val home = homeScore.toIntOrNull()
+        val away = awayScore.toIntOrNull()
+        if (home == null || away == null) {
+            _uiState.update {
+                it.copy(saveMarcadorError = "Ingresa ambos marcadores.")
+            }
+            return
+        }
+
+        val partidoIdLong = partidoId.toLongOrNull()
+        if (partidoIdLong == null) {
+            _uiState.update {
+                it.copy(saveMarcadorError = "Partido no válido.")
+            }
+            return
+        }
+
+        val unidadIdValue = unidadId
+        if (unidadIdValue == null) {
+            _uiState.update {
+                it.copy(saveMarcadorError = "No se encontró la unidad del usuario.")
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isSavingMarcador = true, saveMarcadorError = null)
+            }
+            repository.updateMarcador(
+                userId = userId,
+                unidadId = unidadIdValue,
+                partidoId = partidoIdLong,
+                marcadorPais1 = home,
+                marcadorPais2 = away,
+            ).fold(
+                onSuccess = {
+                    cachedPartidos = cachedPartidos.map { partido ->
+                        if (partido.id == partidoIdLong) {
+                            partido.copy(
+                                marcadorUsuarioPais1 = home,
+                                marcadorUsuarioPais2 = away,
+                            )
+                        } else {
+                            partido
+                        }
+                    }
+                    _uiState.update { state ->
+                        val group = state.selectedGroup
+                        state.copy(
+                            isSavingMarcador = false,
+                            saveMarcadorError = null,
+                            matches = group?.let { g ->
+                                repository.matchesForGroup(cachedPartidos, g)
+                            } ?: state.matches,
+                            initialScores = buildInitialScores(cachedPartidos),
+                        )
+                    }
+                    onSuccess()
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            isSavingMarcador = false,
+                            saveMarcadorError = error.message,
+                        )
+                    }
+                },
+            )
+        }
+    }
+
     private fun buildInitialScores(
         partidos: List<com.itwg.mundial.data.model.PartidoDto>,
     ): Map<String, Pair<String, String>> =
@@ -80,19 +165,20 @@ class MarcadoresViewModel(
             .filter { !it.finalizado }
             .associate { partido ->
                 partido.id.toString() to Pair(
-                    partido.marcadorPais1?.toString() ?: "",
-                    partido.marcadorPais2?.toString() ?: "",
+                    partido.marcadorUsuarioPais1?.toString() ?: "",
+                    partido.marcadorUsuarioPais2?.toString() ?: "",
                 )
             }
 }
 
 class MarcadoresViewModelFactory(
     private val userId: Long,
+    private val unidadId: Long?,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MarcadoresViewModel::class.java)) {
-            return MarcadoresViewModel(userId) as T
+            return MarcadoresViewModel(userId, unidadId) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

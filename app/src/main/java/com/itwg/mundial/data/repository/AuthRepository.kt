@@ -36,7 +36,8 @@ class AuthRepository(context: Context) {
                 ),
             )
             credentialStore.saveCredentials(email, password)
-            sessionStore.saveSession(response.toSession())
+            ApiClient.setBearerToken(null)
+            sessionStore.replaceSession(response.toSession())
             ApiClient.setBearerToken(response.token)
             Result.success(response)
         } catch (e: HttpException) {
@@ -106,6 +107,7 @@ class AuthRepository(context: Context) {
     private fun LoginResponse.toSession() = UserSession(
         userId = user.id,
         token = token,
+        userName = user.name,
         unidadId = user.unidadId,
         unidadNombre = user.unidad?.nombre,
     )

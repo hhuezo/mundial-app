@@ -25,10 +25,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +39,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.itwg.mundial.model.MatchPrediction
+import com.itwg.mundial.ui.components.EditMatchScoreDialog
 import com.itwg.mundial.ui.components.MatchPredictionCard
 import com.itwg.mundial.ui.marcadores.MarcadoresViewModel
 import com.itwg.mundial.ui.marcadores.MarcadoresViewModelFactory
@@ -50,16 +55,19 @@ import com.itwg.mundial.ui.theme.Pearl
 @Composable
 fun MarcadoresScreen(
     userId: Long,
+    unidadId: Long?,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: MarcadoresViewModel = viewModel(
-        factory = MarcadoresViewModelFactory(userId),
+        key = "marcadores_$userId",
+        factory = MarcadoresViewModelFactory(userId, unidadId),
     )
     val uiState by viewModel.uiState.collectAsState()
-    val scoreState = remember { mutableStateMapOf<String, Pair<String, String>>() }
+    val scoreState = remember(userId) { mutableStateMapOf<String, Pair<String, String>>() }
+    var editingMatch by remember { mutableStateOf<MatchPrediction?>(null) }
 
-    // Recarga /marcadores cada vez que el usuario entra a esta pestaña
-    LaunchedEffect(Unit) {
+    // Recarga al entrar a la pestaña o si cambia el usuario logueado
+    LaunchedEffect(userId) {
         viewModel.loadMarcadores()
     }
 
@@ -127,6 +135,48 @@ fun MarcadoresScreen(
         }
         else -> {
             val selectedGroup = uiState.selectedGroup ?: uiState.groups.first()
+
+            editingMatch?.let { match ->
+                if (!match.isFinished) {
+                    DisposableEffect(match.id) {
+                        viewModel.clearSaveMarcadorError()
+                        onDispose { }
+                    }
+                    val scores = scoreState[match.id]
+                        ?: (match.predictionHomeScore?.toString().orEmpty() to
+                            match.predictionAwayScore?.toString().orEmpty())
+                    EditMatchScoreDialog(
+                        match = match,
+                        homeScore = scores.first,
+                        awayScore = scores.second,
+                        onHomeScoreChange = { newHome ->
+                            val current = scoreState[match.id] ?: ("" to "")
+                            scoreState[match.id] = newHome to current.second
+                        },
+                        onAwayScoreChange = { newAway ->
+                            val current = scoreState[match.id] ?: ("" to "")
+                            scoreState[match.id] = current.first to newAway
+                        },
+                        onDismiss = {
+                            if (!uiState.isSavingMarcador) {
+                                editingMatch = null
+                            }
+                        },
+                        onConfirm = {
+                            val current = scoreState[match.id] ?: ("" to "")
+                            viewModel.saveMarcador(
+                                partidoId = match.id,
+                                homeScore = current.first,
+                                awayScore = current.second,
+                                onSuccess = { editingMatch = null },
+                            )
+                        },
+                        isSaving = uiState.isSavingMarcador,
+                        errorMessage = uiState.saveMarcadorError,
+                    )
+                }
+            }
+
             LazyColumn(
                 modifier = modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
@@ -137,20 +187,7 @@ fun MarcadoresScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = "Predicciones de fase de grupos",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                        Text(
-                            text = "Ingresa tus marcadores y sube en el ranking.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+           
 
                 item {
                     MarcadorStatusLegend()
@@ -199,8 +236,8 @@ fun MarcadoresScreen(
                             match = match,
                             homeScore = scores.first,
                             awayScore = scores.second,
-                            onHomeScoreChange = { scoreState[match.id] = it to scores.second },
-                            onAwayScoreChange = { scoreState[match.id] = scores.first to it },
+                            onStatsClick = { /* pantalla de estadísticas pendiente */ },
+                            onEditClick = { editingMatch = match },
                         )
                     }
                 }
@@ -261,6 +298,6 @@ private fun LegendItem(color: Color, label: String) {
 @Composable
 private fun MarcadoresScreenPreview() {
     MundialTheme {
-        MarcadoresScreen(userId = 1L)
+        MarcadoresScreen(userId = 1L, unidadId = 1L)
     }
 }

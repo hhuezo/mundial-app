@@ -21,8 +21,8 @@ fun PartidoDto.toMatchPrediction(): MatchPrediction {
         isFinished = finalizado,
         finalHomeScore = if (finalizado) marcadorPais1 else null,
         finalAwayScore = if (finalizado) marcadorPais2 else null,
-        predictionHomeScore = marcadorPais1,
-        predictionAwayScore = marcadorPais2,
+        predictionHomeScore = marcadorUsuarioPais1,
+        predictionAwayScore = marcadorUsuarioPais2,
     )
 }
 
