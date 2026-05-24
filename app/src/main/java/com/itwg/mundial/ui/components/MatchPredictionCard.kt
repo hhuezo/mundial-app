@@ -58,8 +58,8 @@ fun MatchPredictionCard(
 ) {
     val status = resolveMatchStatus(match, homeScore, awayScore)
     val stripeColor = status.stripeColor()
-    val displayHome = userPredictionDisplay(homeScore, match.predictionHomeScore)
-    val displayAway = userPredictionDisplay(awayScore, match.predictionAwayScore)
+    val displayHome = userPredictionDisplay(homeScore, match.predictionHomeScore, match.isFinished)
+    val displayAway = userPredictionDisplay(awayScore, match.predictionAwayScore, match.isFinished)
     val officialFinalScoreText = if (match.isFinished) {
         val home = match.finalHomeScore?.toString() ?: "-"
         val away = match.finalAwayScore?.toString() ?: "-"
@@ -128,8 +128,12 @@ fun MatchPredictionCard(
                     ScoreSection(
                         homeScore = displayHome,
                         awayScore = displayAway,
-                        homeIsPlaceholder = !match.isFinished && homeScore.isBlank(),
-                        awayIsPlaceholder = !match.isFinished && awayScore.isBlank(),
+                        homeIsPlaceholder = !match.isFinished &&
+                            match.predictionHomeScore == null &&
+                            homeScore.isBlank(),
+                        awayIsPlaceholder = !match.isFinished &&
+                            match.predictionAwayScore == null &&
+                            awayScore.isBlank(),
                     )
                     TeamColumn(
                         name = match.awayTeam,
@@ -221,11 +225,22 @@ private fun MatchCardActionsRow(
     }
 }
 
-private fun String.toScoreLabel(): String = if (isBlank()) "0" else this
-
-private fun userPredictionDisplay(localScore: String, apiScore: Int?): String {
-    val value = localScore.ifBlank { apiScore?.toString().orEmpty() }
-    return value.toScoreLabel()
+/** Marcador grande: predicción del usuario (marcadorUsuario_*). */
+private fun userPredictionDisplay(
+    localScore: String,
+    apiScore: Int?,
+    isFinished: Boolean,
+): String {
+    val value = when {
+        localScore.isNotBlank() -> localScore
+        apiScore != null -> apiScore.toString()
+        else -> ""
+    }
+    return when {
+        value.isNotEmpty() -> value
+        isFinished -> "-"
+        else -> "0"
+    }
 }
 
 @Composable

@@ -48,6 +48,8 @@ object ApiClient {
 
     val marcadoresApi: MarcadoresApi by lazy { retrofit.create(MarcadoresApi::class.java) }
 
+    val homeApi: HomeApi by lazy { retrofit.create(HomeApi::class.java) }
+
     val validationErrorAdapter =
         moshi.adapter(com.itwg.mundial.data.model.ValidationErrorResponse::class.java)
 

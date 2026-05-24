@@ -2,20 +2,42 @@ package com.itwg.mundial.data.mapper
 
 import com.itwg.mundial.data.model.PartidoDto
 import com.itwg.mundial.model.MatchPrediction
+import com.itwg.mundial.ui.home.HomeMatchUi
 private val MONTHS_ES = listOf(
     "ene", "feb", "mar", "abr", "may", "jun",
     "jul", "ago", "sep", "oct", "nov", "dic",
 )
 
+fun PartidoDto.toHomeMatchUi(): HomeMatchUi {
+    val home = pais1
+    val away = pais2
+    return HomeMatchUi(
+        id = id.toString(),
+        homeTeam = home?.nombre ?: "Por definir",
+        awayTeam = away?.nombre ?: "Por definir",
+        homeFlagUrl = home?.bandera,
+        awayFlagUrl = away?.bandera,
+        dateTime = formatPartidoDateTime(fecha, hora),
+        isFinished = finalizado,
+        finalHomeScore = if (finalizado) marcadorPais1 else null,
+        finalAwayScore = if (finalizado) marcadorPais2 else null,
+        predictionHomeScore = marcadorUsuarioPais1,
+        predictionAwayScore = marcadorUsuarioPais2,
+        ganado = ganado ?: 0.0,
+    )
+}
+
 fun PartidoDto.toMatchPrediction(): MatchPrediction {
-    val group = pais1.grupo
+    val home = pais1
+    val away = pais2
+    val group = home?.grupo ?: away?.grupo ?: "-"
     return MatchPrediction(
         id = id.toString(),
         group = group,
-        homeTeam = pais1.nombre,
-        awayTeam = pais2.nombre,
-        homeFlagUrl = pais1.bandera,
-        awayFlagUrl = pais2.bandera,
+        homeTeam = home?.nombre ?: "Por definir",
+        awayTeam = away?.nombre ?: "Por definir",
+        homeFlagUrl = home?.bandera,
+        awayFlagUrl = away?.bandera,
         dateTime = formatPartidoDateTime(fecha, hora),
         venue = fase.nombre,
         isFinished = finalizado,
@@ -41,9 +63,9 @@ fun formatPartidoDateTime(fecha: String, hora: String): String {
 }
 
 fun List<PartidoDto>.filterByGroup(group: String): List<MatchPrediction> =
-    filter { it.pais1.grupo == group }.map { it.toMatchPrediction() }
+    filter { it.pais1?.grupo == group }.map { it.toMatchPrediction() }
 
 fun List<PartidoDto>.availableGroups(): List<String> =
-    map { it.pais1.grupo }
+    mapNotNull { it.pais1?.grupo }
         .distinct()
         .sorted()

@@ -236,6 +236,11 @@ fun AppRoot() {
                     userId = userId,
                     userName = loggedInUserName,
                     unidadId = loggedInUnidadId,
+                    onProfileRefreshed = { id, name, unidad ->
+                        loggedInUserId = id
+                        loggedInUserName = name
+                        loggedInUnidadId = unidad
+                    },
                     biometricEnabled = biometricEnabled,
                     onBiometricToggle = { enabled ->
                         opcionesBiometricMessage = null
@@ -304,6 +309,7 @@ fun MundialApp(
     userId: Long,
     userName: String? = null,
     unidadId: Long? = null,
+    onProfileRefreshed: (userId: Long, userName: String?, unidadId: Long?) -> Unit = { _, _, _ -> },
     biometricEnabled: Boolean = false,
     onBiometricToggle: (Boolean) -> Unit = {},
     biometricMessage: String? = null,
@@ -352,6 +358,8 @@ fun MundialApp(
                 AppDestinations.HOME -> HomeScreen(
                     userId = userId,
                     userName = userName,
+                    unidadId = unidadId,
+                    onProfileRefreshed = onProfileRefreshed,
                     modifier = screenModifier,
                 )
                 AppDestinations.MARCADORES -> MarcadoresScreen(

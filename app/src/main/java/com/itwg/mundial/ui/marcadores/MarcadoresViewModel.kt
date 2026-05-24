@@ -161,14 +161,12 @@ class MarcadoresViewModel(
     private fun buildInitialScores(
         partidos: List<com.itwg.mundial.data.model.PartidoDto>,
     ): Map<String, Pair<String, String>> =
-        partidos
-            .filter { !it.finalizado }
-            .associate { partido ->
-                partido.id.toString() to Pair(
-                    partido.marcadorUsuarioPais1?.toString() ?: "",
-                    partido.marcadorUsuarioPais2?.toString() ?: "",
-                )
-            }
+        partidos.associate { partido ->
+            partido.id.toString() to Pair(
+                partido.marcadorUsuarioPais1?.toString() ?: "",
+                partido.marcadorUsuarioPais2?.toString() ?: "",
+            )
+        }
 }
 
 class MarcadoresViewModelFactory(
