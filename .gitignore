@@ -14,5 +14,5 @@
 .cxx
 local.properties
 
-# API configuration (local secrets)
-config/ApiConfig.kt
+# URL local de la API (cada desarrollador / máquina)
+app/src/main/java/com/itwg/mundial/config/ApiConfig.kt
