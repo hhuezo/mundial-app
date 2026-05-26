@@ -2,6 +2,8 @@ package com.itwg.mundial.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,38 +13,42 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.itwg.mundial.data.repository.MarcadoresRepository
@@ -50,17 +56,21 @@ import com.itwg.mundial.ui.marcadores.PartidoDetailUi
 import com.itwg.mundial.ui.marcadores.PartidoDetailViewModel
 import com.itwg.mundial.ui.marcadores.PartidoDetailViewModelFactory
 import com.itwg.mundial.ui.marcadores.PartidoUsuarioMarcadorUi
-import com.itwg.mundial.ui.theme.AntiqueGold
-import com.itwg.mundial.ui.theme.FinishedMatchBackground
-import com.itwg.mundial.ui.theme.FinishedMatchBorder
-import com.itwg.mundial.ui.theme.FinishedMatchLabel
+import com.itwg.mundial.ui.theme.DetailBackground
+import com.itwg.mundial.ui.theme.DetailOnPrimaryContainer
+import com.itwg.mundial.ui.theme.DetailOnSecondaryContainer
+import com.itwg.mundial.ui.theme.DetailOnSurfaceVariant
+import com.itwg.mundial.ui.theme.DetailPrimary
+import com.itwg.mundial.ui.theme.DetailPrimaryContainer
+import com.itwg.mundial.ui.theme.DetailSecondary
+import com.itwg.mundial.ui.theme.DetailSecondaryContainer
+import com.itwg.mundial.ui.theme.DetailSurfaceContainer
+import com.itwg.mundial.ui.theme.DetailTertiaryFixed
 import com.itwg.mundial.ui.theme.Midnight
-import com.itwg.mundial.ui.theme.MundialTheme
 import com.itwg.mundial.ui.theme.MutedRose
 import com.itwg.mundial.ui.theme.Pearl
 import com.itwg.mundial.util.formatDinero
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PartidoDetailScreen(
     partidoId: Long,
@@ -76,75 +86,56 @@ fun PartidoDetailScreen(
     )
     val uiState by viewModel.uiState.collectAsState()
 
+    LaunchedEffect(partidoId, userId) {
+        viewModel.loadDetail()
+    }
+
     BackHandler(onBack = onBack)
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = { Text("Detalle del partido") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = Pearl,
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Midnight,
-                    titleContentColor = Pearl,
-                    navigationIconContentColor = Pearl,
-                ),
-            )
-        },
-    ) { innerPadding ->
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(color = Midnight)
-                }
+    when {
+        uiState.isLoading -> {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(DetailBackground),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = DetailPrimary)
             }
-            uiState.errorMessage != null -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .padding(24.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = uiState.errorMessage.orEmpty(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MutedRose,
-                        textAlign = TextAlign.Center,
-                    )
-                    Button(
-                        onClick = { viewModel.loadDetail() },
-                        modifier = Modifier.padding(top = 16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Midnight,
-                            contentColor = Pearl,
-                        ),
-                    ) {
-                        Text("Reintentar")
-                    }
-                }
-            }
-            uiState.detail != null -> {
-                PartidoDetailContent(
-                    detail = uiState.detail!!,
-                    currentUserId = userId,
-                    contentPadding = innerPadding,
+        }
+        uiState.errorMessage != null -> {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(DetailBackground)
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = uiState.errorMessage.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MutedRose,
+                    textAlign = TextAlign.Center,
                 )
+                Button(
+                    onClick = { viewModel.loadDetail() },
+                    modifier = Modifier.padding(top = 16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DetailPrimary,
+                        contentColor = Pearl,
+                    ),
+                ) {
+                    Text("Reintentar")
+                }
             }
+        }
+        uiState.detail != null -> {
+            PartidoDetailContent(
+                detail = uiState.detail!!,
+                currentUserId = userId,
+                modifier = modifier,
+            )
         }
     }
 }
@@ -153,32 +144,49 @@ fun PartidoDetailScreen(
 private fun PartidoDetailContent(
     detail: PartidoDetailUi,
     currentUserId: Long,
-    contentPadding: PaddingValues,
+    modifier: Modifier = Modifier,
 ) {
     LazyColumn(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .padding(contentPadding),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .background(DetailBackground),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         item {
             PartidoDetailHeader(detail = detail)
         }
 
         item {
-            Text(
-                text = "Marcadores de la unidad",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "${detail.usuarios.size} jugadores",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Marcadores de la unidad",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = DetailPrimary,
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Groups,
+                        contentDescription = null,
+                        tint = DetailOnSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(
+                        text = "${detail.usuarios.size} jugadores",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DetailOnSurfaceVariant,
+                    )
+                }
+            }
         }
 
         if (detail.usuarios.isEmpty()) {
@@ -186,7 +194,7 @@ private fun PartidoDetailContent(
                 Text(
                     text = "No hay jugadores en esta unidad.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = DetailOnSurfaceVariant,
                 )
             }
         } else {
@@ -203,141 +211,146 @@ private fun PartidoDetailContent(
 
 @Composable
 private fun PartidoDetailHeader(detail: PartidoDetailUi) {
+    val metaLine = buildList {
+        detail.grupoLabel?.let { add(it) }
+        add(detail.dateTime)
+    }.joinToString(" • ")
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (detail.isFinished) FinishedMatchBackground else Pearl,
-        ),
-        border = if (detail.isFinished) BorderStroke(1.dp, FinishedMatchBorder) else null,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = DetailPrimaryContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column {
-                    Text(
-                        text = detail.faseNombre,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Midnight,
+                .drawBehind {
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.12f),
+                                Color.Transparent,
+                            ),
+                            center = Offset(size.width / 2f, size.height * 0.35f),
+                            radius = size.maxDimension * 0.75f,
+                        ),
+                        radius = size.maxDimension,
+                        center = Offset(size.width / 2f, size.height * 0.35f),
                     )
-                    detail.grupoLabel?.let { grupo ->
-                        Text(
-                            text = grupo,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                 }
-                Text(
-                    text = detail.dateTime,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            Row(
+                .padding(20.dp),
+        ) {
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                PartidoDetailTeam(
-                    name = detail.homeTeam,
-                    flagUrl = detail.homeFlagUrl,
-                    alignEnd = false,
-                    modifier = Modifier.weight(1f),
-                )
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 12.dp),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = if (detail.isFinished) "Resultado" else "vs",
+                        text = metaLine,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DetailOnPrimaryContainer,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (detail.isFinished) {
+                        Surface(
+                            color = DetailSecondary,
+                            shape = RoundedCornerShape(50),
+                        ) {
+                            Text(
+                                text = "Partido finalizado",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    PartidoDetailTeamColumn(
+                        name = detail.homeTeam,
+                        flagUrl = detail.homeFlagUrl,
                     )
                     Text(
                         text = if (detail.isFinished) {
                             "${detail.finalHomeScore ?: 0} - ${detail.finalAwayScore ?: 0}"
                         } else {
-                            "—"
+                            "vs"
                         },
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (detail.isFinished) FinishedMatchLabel else MaterialTheme.colorScheme.onSurface,
+                        fontSize = if (detail.isFinished) 32.sp else 24.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                        letterSpacing = (-0.5).sp,
+                    )
+                    PartidoDetailTeamColumn(
+                        name = detail.awayTeam,
+                        flagUrl = detail.awayFlagUrl,
                     )
                 }
-                PartidoDetailTeam(
-                    name = detail.awayTeam,
-                    flagUrl = detail.awayFlagUrl,
-                    alignEnd = true,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            if (detail.isFinished) {
-                Text(
-                    text = "Partido finalizado",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = FinishedMatchLabel,
-                )
             }
         }
     }
 }
 
 @Composable
-private fun PartidoDetailTeam(
+private fun PartidoDetailTeamColumn(
     name: String,
     flagUrl: String?,
-    alignEnd: Boolean,
-    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier,
-        horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.widthIn(max = 110.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = if (alignEnd) Arrangement.End else Arrangement.Start,
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(Color.White)
+                .border(2.dp, DetailTertiaryFixed, CircleShape),
+            contentAlignment = Alignment.Center,
         ) {
-            if (!alignEnd && !flagUrl.isNullOrBlank()) {
-                PartidoDetailFlag(flagUrl)
-            }
-            Text(
-                text = name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = if (alignEnd) TextAlign.End else TextAlign.Start,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 6.dp),
-            )
-            if (alignEnd && !flagUrl.isNullOrBlank()) {
-                PartidoDetailFlag(flagUrl)
+            if (!flagUrl.isNullOrBlank() && !LocalInspectionMode.current) {
+                AsyncImage(
+                    model = flagUrl,
+                    contentDescription = name,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop,
+                )
+            } else {
+                Text(
+                    text = name.take(3).uppercase(),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = DetailPrimary,
+                )
             }
         }
+        Text(
+            text = name,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = DetailOnPrimaryContainer,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
-}
-
-@Composable
-private fun PartidoDetailFlag(flagUrl: String) {
-    AsyncImage(
-        model = flagUrl,
-        contentDescription = null,
-        modifier = Modifier
-            .size(36.dp)
-            .clip(RoundedCornerShape(6.dp)),
-        contentScale = ContentScale.Crop,
-    )
 }
 
 @Composable
@@ -346,94 +359,193 @@ private fun PartidoUsuarioMarcadorRow(
     isCurrentUser: Boolean,
     isFinished: Boolean,
 ) {
-    Card(
+    val isWinner = isFinished && usuario.ganado > 0.0
+
+    Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Pearl),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isCurrentUser) 3.dp else 1.dp),
-        border = if (isCurrentUser) BorderStroke(1.5.dp, Midnight) else null,
+        color = Color.White,
+        shadowElevation = 1.dp,
+        border = BorderStroke(
+            width = if (isCurrentUser) 1.5.dp else 1.dp,
+            color = if (isCurrentUser) DetailPrimary else DetailTertiaryFixed,
+        ),
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                PartidoPlayerAvatar(
+                    name = usuario.name,
+                    isCurrentUser = isCurrentUser,
+                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Text(
-                            text = usuario.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
+                            text = usuario.name.uppercase(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = DetailPrimary,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
                         )
                         if (isCurrentUser) {
                             Surface(
-                                color = Midnight,
+                                color = DetailPrimary,
                                 shape = RoundedCornerShape(50),
                             ) {
                                 Text(
                                     text = "Tú",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = Pearl,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 )
                             }
                         }
                     }
-                    Text(
-                        text = usuario.email,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                    PartidoPredictionChip(
+                        usuario = usuario,
+                        isFinished = isFinished,
                     )
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = if (usuario.hasPrediction) {
-                            "${usuario.marcadorHome} - ${usuario.marcadorAway}"
-                        } else {
-                            "Sin marcar"
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (usuario.hasPrediction) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                    if (isFinished) {
-                        Text(
-                            text = if (usuario.ganado > 0) {
-                                "+${formatDinero(usuario.ganado)}"
-                            } else {
-                                formatDinero(usuario.ganado)
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = if (usuario.ganado > 0) AntiqueGold else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    } else if (usuario.hasPrediction) {
-                        Text(
-                            text = "Marcador ingresado",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
                 }
             }
+
+            if (isFinished) {
+                PartidoGanadoBadge(
+                    ganado = usuario.ganado,
+                    isWinner = isWinner,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun PartidoPlayerAvatar(
+    name: String,
+    isCurrentUser: Boolean,
+) {
+    Surface(
+        modifier = Modifier.size(40.dp),
+        shape = CircleShape,
+        color = if (isCurrentUser) DetailSecondaryContainer else DetailSurfaceContainer,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = nameInitials(name),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = if (isCurrentUser) DetailOnSecondaryContainer else DetailPrimary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PartidoPredictionChip(
+    usuario: PartidoUsuarioMarcadorUi,
+    isFinished: Boolean,
+) {
+    if (usuario.hasPrediction) {
+        Surface(
+            color = DetailSurfaceContainer,
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, DetailTertiaryFixed),
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = "Predicción",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DetailOnSurfaceVariant,
+                )
+                Text(
+                    text = "${usuario.marcadorHome} - ${usuario.marcadorAway}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Black,
+                    color = DetailPrimary,
+                )
+            }
+        }
+    } else {
+        Surface(
+            color = DetailSurfaceContainer.copy(alpha = 0.6f),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, DetailTertiaryFixed.copy(alpha = 0.6f)),
+        ) {
+            Text(
+                text = if (isFinished) "Sin predicción" else "Sin marcar",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = DetailOnSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PartidoGanadoBadge(
+    ganado: Double,
+    isWinner: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val amountText = if (ganado > 0) {
+        "+${formatDinero(ganado)}"
+    } else {
+        formatDinero(ganado)
+    }
+    Surface(
+        modifier = modifier.widthIn(min = 72.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = DetailPrimaryContainer,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = if (isWinner) "GANÓ" else "GANADO",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = DetailOnPrimaryContainer,
+                letterSpacing = 0.5.sp,
+            )
+            Text(
+                text = amountText,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+            )
+        }
+    }
+}
+
+private fun nameInitials(name: String): String {
+    val parts = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    return when {
+        parts.size >= 2 -> "${parts[0].first()}${parts[1].first()}".uppercase()
+        parts.size == 1 -> parts[0].take(2).uppercase()
+        else -> "?"
     }
 }

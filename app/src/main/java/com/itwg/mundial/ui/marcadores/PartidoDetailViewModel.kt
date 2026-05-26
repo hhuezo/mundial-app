@@ -29,13 +29,11 @@ class PartidoDetailViewModel(
     private val _uiState = MutableStateFlow(PartidoDetailUiState())
     val uiState: StateFlow<PartidoDetailUiState> = _uiState.asStateFlow()
 
-    init {
-        loadDetail()
-    }
-
     fun loadDetail() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.update {
+                it.copy(isLoading = true, errorMessage = null, detail = null)
+            }
             repository.loadMarcadorDetail(partidoId, userId).fold(
                 onSuccess = { response ->
                     _uiState.update {

@@ -15,7 +15,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -54,6 +56,7 @@ fun HomeScreen(
     userName: String?,
     unidadId: Long?,
     onProfileRefreshed: (userId: Long, userName: String?, unidadId: Long?) -> Unit = { _, _, _ -> },
+    onPartidoDetailChange: (onBack: (() -> Unit)?) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -107,13 +110,29 @@ fun HomeScreen(
         matchId.toLongOrNull()?.let { selectedPartidoId = it }
     }
 
-    if (selectedPartidoId != null) {
-        PartidoDetailScreen(
-            partidoId = selectedPartidoId!!,
-            userId = userId,
-            onBack = { selectedPartidoId = null },
-            modifier = modifier,
+    LaunchedEffect(selectedPartidoId) {
+        onPartidoDetailChange(
+            if (selectedPartidoId != null) {
+                { selectedPartidoId = null }
+            } else {
+                null
+            },
         )
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { onPartidoDetailChange(null) }
+    }
+
+    selectedPartidoId?.let { partidoId ->
+        key(partidoId) {
+            PartidoDetailScreen(
+                partidoId = partidoId,
+                userId = userId,
+                onBack = { selectedPartidoId = null },
+                modifier = modifier,
+            )
+        }
         return
     }
 

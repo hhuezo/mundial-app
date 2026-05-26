@@ -2,15 +2,18 @@ package com.itwg.mundial
 
 import android.app.Activity
 import android.os.Bundle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -316,6 +319,12 @@ fun MundialApp(
     onLogout: () -> Unit = {},
 ) {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+    var partidoDetailOnBack by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val isPartidoDetail = partidoDetailOnBack != null
+
+    BackHandler(enabled = isPartidoDetail) {
+        partidoDetailOnBack?.invoke()
+    }
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -338,16 +347,36 @@ fun MundialApp(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 TopAppBar(
-                    modifier = Modifier.height(56.dp),
+                    modifier = Modifier.height(if (isPartidoDetail) 72.dp else 64.dp),
+                    navigationIcon = {
+                        if (isPartidoDetail) {
+                            IconButton(onClick = { partidoDetailOnBack?.invoke() }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Volver",
+                                    tint = Pearl,
+                                )
+                            }
+                        }
+                    },
                     title = {
                         Text(
-                            text = currentDestination.label,
-                            style = MaterialTheme.typography.titleMedium,
+                            text = if (isPartidoDetail) {
+                                "Detalle del partido"
+                            } else {
+                                currentDestination.label
+                            },
+                            style = if (isPartidoDetail) {
+                                MaterialTheme.typography.titleLarge
+                            } else {
+                                MaterialTheme.typography.titleMedium
+                            },
                         )
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Midnight,
                         titleContentColor = Pearl,
+                        navigationIconContentColor = Pearl,
                         scrolledContainerColor = MidnightDark,
                     ),
                 )
@@ -360,6 +389,9 @@ fun MundialApp(
                     userName = userName,
                     unidadId = unidadId,
                     onProfileRefreshed = onProfileRefreshed,
+                    onPartidoDetailChange = { onBack ->
+                        partidoDetailOnBack = onBack
+                    },
                     modifier = screenModifier,
                 )
                 AppDestinations.MARCADORES -> MarcadoresScreen(
