@@ -3,6 +3,9 @@ package com.itwg.mundial.ui.marcadores
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.itwg.mundial.data.mapper.toMatchPrediction
+import com.itwg.mundial.data.model.MarcadoresFaceDto
+import com.itwg.mundial.data.model.PartidoDto
 import com.itwg.mundial.data.repository.MarcadoresRepository
 import com.itwg.mundial.model.MatchPrediction
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +16,8 @@ import kotlinx.coroutines.launch
 
 data class MarcadoresUiState(
     val isLoading: Boolean = true,
+    val faces: List<MarcadoresFaceUi> = emptyList(),
+    val selectedFaceId: Long? = null,
     val groups: List<String> = emptyList(),
     val selectedGroup: String? = null,
     val matches: List<MatchPrediction> = emptyList(),
@@ -31,29 +36,26 @@ class MarcadoresViewModel(
     private val _uiState = MutableStateFlow(MarcadoresUiState())
     val uiState: StateFlow<MarcadoresUiState> = _uiState.asStateFlow()
 
-    private var cachedPartidos = emptyList<com.itwg.mundial.data.model.PartidoDto>()
+    private var cachedFaces = emptyList<MarcadoresFaceUi>()
+    private var apiGrupos: List<String>? = null
 
     fun loadMarcadores() {
         viewModelScope.launch {
+            val previousFaceId = _uiState.value.selectedFaceId
             val previousGroup = _uiState.value.selectedGroup
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             repository.loadMarcadores(userId).fold(
                 onSuccess = { data ->
-                    cachedPartidos = data.partidos
-                    val selected = previousGroup?.takeIf { it in data.groups }
-                        ?: data.groups.firstOrNull()
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            groups = data.groups,
-                            selectedGroup = selected,
-                            matches = selected?.let { g ->
-                                repository.matchesForGroup(data.partidos, g)
-                            } ?: emptyList(),
-                            initialScores = buildInitialScores(data.partidos),
-                            errorMessage = null,
-                        )
-                    }
+                    apiGrupos = data.grupos
+                    cachedFaces = data.faces.map { it.toMarcadoresFaceUi(data.grupos) }
+                    val selectedFaceId = previousFaceId?.takeIf { id ->
+                        cachedFaces.any { it.id == id }
+                    } ?: cachedFaces.firstOrNull()?.id
+                    applyFaceSelection(
+                        faceId = selectedFaceId,
+                        preferredGroup = previousGroup,
+                    )
+                    _uiState.update { it.copy(isLoading = false, errorMessage = null) }
                 },
                 onFailure = { error ->
                     _uiState.update {
@@ -67,11 +69,16 @@ class MarcadoresViewModel(
         }
     }
 
+    fun selectFace(faceId: Long) {
+        applyFaceSelection(faceId = faceId, preferredGroup = null)
+    }
+
     fun selectGroup(group: String) {
+        val face = cachedFaces.find { it.id == _uiState.value.selectedFaceId } ?: return
         _uiState.update {
             it.copy(
                 selectedGroup = group,
-                matches = repository.matchesForGroup(cachedPartidos, group),
+                matches = repository.matchesForGroup(face.partidos, group),
             )
         }
     }
@@ -123,27 +130,25 @@ class MarcadoresViewModel(
                 marcadorPais2 = away,
             ).fold(
                 onSuccess = {
-                    cachedPartidos = cachedPartidos.map { partido ->
-                        if (partido.id == partidoIdLong) {
-                            partido.copy(
-                                marcadorUsuarioPais1 = home,
-                                marcadorUsuarioPais2 = away,
-                            )
-                        } else {
-                            partido
-                        }
-                    }
-                    _uiState.update { state ->
-                        val group = state.selectedGroup
-                        state.copy(
-                            isSavingMarcador = false,
-                            saveMarcadorError = null,
-                            matches = group?.let { g ->
-                                repository.matchesForGroup(cachedPartidos, g)
-                            } ?: state.matches,
-                            initialScores = buildInitialScores(cachedPartidos),
+                    cachedFaces = cachedFaces.map { face ->
+                        face.copy(
+                            partidos = face.partidos.map { partido ->
+                                if (partido.id == partidoIdLong) {
+                                    partido.copy(
+                                        marcadorUsuarioPais1 = home,
+                                        marcadorUsuarioPais2 = away,
+                                    )
+                                } else {
+                                    partido
+                                }
+                            },
                         )
                     }
+                    applyFaceSelection(
+                        faceId = _uiState.value.selectedFaceId,
+                        preferredGroup = _uiState.value.selectedGroup,
+                    )
+                    _uiState.update { it.copy(isSavingMarcador = false, saveMarcadorError = null) }
                     onSuccess()
                 },
                 onFailure = { error ->
@@ -158,8 +163,57 @@ class MarcadoresViewModel(
         }
     }
 
+    private fun applyFaceSelection(faceId: Long?, preferredGroup: String?) {
+        val face = cachedFaces.find { it.id == faceId }
+        if (face == null) {
+            _uiState.update {
+                it.copy(
+                    faces = cachedFaces,
+                    selectedFaceId = null,
+                    groups = emptyList(),
+                    selectedGroup = null,
+                    matches = emptyList(),
+                    initialScores = emptyMap(),
+                )
+            }
+            return
+        }
+
+        val groups = face.groups
+        val selectedGroup = if (face.isGroupPhase) {
+            preferredGroup?.takeIf { it in groups } ?: groups.firstOrNull()
+        } else {
+            null
+        }
+        val matches = if (face.isGroupPhase && selectedGroup != null) {
+            repository.matchesForGroup(face.partidos, selectedGroup)
+        } else {
+            face.partidos.map { it.toMatchPrediction() }
+        }
+
+        _uiState.update {
+            it.copy(
+                faces = cachedFaces,
+                selectedFaceId = face.id,
+                groups = groups,
+                selectedGroup = selectedGroup,
+                matches = matches,
+                initialScores = buildInitialScores(face.partidos),
+            )
+        }
+    }
+
+    private fun MarcadoresFaceDto.toMarcadoresFaceUi(apiGrupos: List<String>?) = MarcadoresFaceUi(
+        id = id,
+        faseId = faseId,
+        faseNombre = faseNombre,
+        valor = valor,
+        partidos = partidos,
+        groups = repository.groupsForFace(this, apiGrupos),
+    )
+
     private fun buildInitialScores(
-        partidos: List<com.itwg.mundial.data.model.PartidoDto>,
+        partidos: List<PartidoDto>,
     ): Map<String, Pair<String, String>> =
         partidos.associate { partido ->
             partido.id.toString() to Pair(

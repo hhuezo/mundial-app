@@ -368,6 +368,7 @@ fun MundialApp(
                     modifier = screenModifier,
                 )
                 AppDestinations.OPCIONES -> OpcionesScreen(
+                    userId = userId,
                     modifier = screenModifier,
                     biometricEnabled = biometricEnabled,
                     onBiometricToggle = onBiometricToggle,

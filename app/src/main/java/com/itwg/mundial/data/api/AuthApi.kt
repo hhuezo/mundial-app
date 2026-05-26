@@ -4,6 +4,8 @@ import com.itwg.mundial.data.model.LoginRequest
 import com.itwg.mundial.data.model.LoginResponse
 import com.itwg.mundial.data.model.MeResponse
 import com.itwg.mundial.data.model.MessageResponse
+import com.itwg.mundial.data.model.ResetPasswordRequest
+import com.itwg.mundial.data.model.ResetPasswordResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -17,4 +19,7 @@ interface AuthApi {
 
     @GET("me")
     suspend fun me(): MeResponse
+
+    @POST("reset-password")
+    suspend fun resetPassword(@Body body: ResetPasswordRequest): ResetPasswordResponse
 }

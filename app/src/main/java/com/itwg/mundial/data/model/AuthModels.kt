@@ -32,6 +32,16 @@ data class UnidadDto(
     val nombre: String,
 )
 
+data class ResetPasswordRequest(
+    @Json(name = "user_id") val userId: Long,
+    val password: String,
+)
+
+data class ResetPasswordResponse(
+    val message: String,
+    val user: UserDto,
+)
+
 data class MessageResponse(
     val message: String,
 )

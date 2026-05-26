@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.itwg.mundial.ui.components
 
 import androidx.compose.foundation.background
@@ -5,7 +7,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,14 +18,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -32,7 +31,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,7 +44,6 @@ import com.itwg.mundial.model.MatchPrediction
 import com.itwg.mundial.model.resolveMatchStatus
 import com.itwg.mundial.model.stripeColor
 import com.itwg.mundial.ui.theme.Linen
-import com.itwg.mundial.ui.theme.Midnight
 import com.itwg.mundial.ui.theme.MundialTheme
 import com.itwg.mundial.ui.theme.Pearl
 import com.itwg.mundial.ui.theme.Sand
@@ -52,7 +53,6 @@ fun MatchPredictionCard(
     match: MatchPrediction,
     homeScore: String,
     awayScore: String,
-    onStatsClick: () -> Unit,
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -69,28 +69,26 @@ fun MatchPredictionCard(
     }
 
     Card(
+        onClick = onEditClick,
+        enabled = !match.isFinished,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Pearl),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IntrinsicSize.Min),
+                .drawBehind {
+                    drawRect(
+                        color = stripeColor,
+                        size = Size(6.dp.toPx(), size.height),
+                    )
+                }
+                .padding(start = 6.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .width(6.dp)
-                    .fillMaxHeight()
-                    .background(stripeColor),
-            )
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -144,83 +142,43 @@ fun MatchPredictionCard(
                 }
 
                 HorizontalDivider(color = Sand.copy(alpha = 0.6f))
-                MatchCardActionsRow(
-                    venue = match.venue,
-                    isFinished = match.isFinished,
-                    finalScoreText = officialFinalScoreText,
-                    canEdit = !match.isFinished,
-                    onStatsClick = onStatsClick,
-                    onEditClick = onEditClick,
-                )
-            }
+            MatchCardFooter(
+                venue = match.venue,
+                isFinished = match.isFinished,
+                finalScoreText = officialFinalScoreText,
+            )
         }
     }
 }
 
 @Composable
-private fun MatchCardActionsRow(
+private fun MatchCardFooter(
     venue: String,
     isFinished: Boolean,
     finalScoreText: String?,
-    canEdit: Boolean,
-    onStatsClick: () -> Unit,
-    onEditClick: () -> Unit,
 ) {
-    Row(
+    Box(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        contentAlignment = Alignment.Center,
     ) {
-        IconButton(
-            onClick = onStatsClick,
-            modifier = Modifier.size(40.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.BarChart,
-                contentDescription = "Ver estadísticas del partido",
-                tint = Midnight,
-            )
-        }
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 8.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            when {
-                isFinished && !finalScoreText.isNullOrBlank() -> {
-                    Text(
-                        text = finalScoreText,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-                !isFinished -> {
-                    Text(
-                        text = venue,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
+        when {
+            isFinished && !finalScoreText.isNullOrBlank() -> {
+                Text(
+                    text = finalScoreText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                )
             }
-        }
-        IconButton(
-            onClick = onEditClick,
-            enabled = canEdit,
-            modifier = Modifier.size(40.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Edit,
-                contentDescription = "Editar marcador",
-                tint = if (canEdit) {
-                    Midnight
-                } else {
-                    MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                },
-            )
+            !isFinished -> {
+                Text(
+                    text = venue,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
@@ -279,7 +237,7 @@ private fun TeamFlag(
             .border(1.dp, Sand, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        if (!flagUrl.isNullOrBlank()) {
+        if (!flagUrl.isNullOrBlank() && !LocalInspectionMode.current) {
             AsyncImage(
                 model = flagUrl,
                 contentDescription = name,
@@ -350,44 +308,59 @@ private fun ScoreLabel(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(
+    name = "Pendiente",
+    showBackground = true,
+    widthDp = 360,
+)
 @Composable
-private fun MatchPredictionCardPreview() {
+private fun MatchPredictionCardPendingPreview() {
     MundialTheme {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            MatchPredictionCard(
-                match = MatchPrediction(
-                    id = "1",
-                    group = "A",
-                    homeTeam = "México",
-                    awayTeam = "EE.UU.",
-                    homeFlagUrl = "https://flagcdn.com/w320/mx.png",
-                    awayFlagUrl = "https://flagcdn.com/w320/us.png",
-                    dateTime = "12 jun • 18:00",
-                    venue = "Estadio Azteca",
-                ),
-                homeScore = "2",
-                awayScore = "1",
-                onStatsClick = {},
-                onEditClick = {},
-            )
-            MatchPredictionCard(
-                match = MatchPrediction(
-                    id = "2",
-                    group = "A",
-                    homeTeam = "Canadá",
-                    awayTeam = "Argentina",
-                    dateTime = "13 jun • 21:00",
-                    venue = "BC Place",
-                    isFinished = true,
-                    finalHomeScore = 1,
-                    finalAwayScore = 2,
-                ),
-                homeScore = "",
-                awayScore = "",
-                onStatsClick = {},
-                onEditClick = {},
-            )
-        }
+        MatchPredictionCard(
+            match = MatchPrediction(
+                id = "1",
+                group = "A",
+                homeTeam = "México",
+                awayTeam = "EE.UU.",
+                dateTime = "12 jun • 18:00",
+                venue = "Estadio Azteca",
+                predictionHomeScore = 2,
+                predictionAwayScore = 1,
+            ),
+            homeScore = "2",
+            awayScore = "1",
+            onEditClick = {},
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}
+
+@Preview(
+    name = "Finalizado",
+    showBackground = true,
+    widthDp = 360,
+)
+@Composable
+private fun MatchPredictionCardFinishedPreview() {
+    MundialTheme {
+        MatchPredictionCard(
+            match = MatchPrediction(
+                id = "2",
+                group = "A",
+                homeTeam = "Canadá",
+                awayTeam = "Argentina",
+                dateTime = "13 jun • 21:00",
+                venue = "BC Place",
+                isFinished = true,
+                finalHomeScore = 1,
+                finalAwayScore = 2,
+                predictionHomeScore = 0,
+                predictionAwayScore = 2,
+            ),
+            homeScore = "",
+            awayScore = "",
+            onEditClick = {},
+            modifier = Modifier.padding(16.dp),
+        )
     }
 }

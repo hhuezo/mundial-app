@@ -13,6 +13,7 @@ fun PartidoDto.toHomeMatchUi(): HomeMatchUi {
     val away = pais2
     return HomeMatchUi(
         id = id.toString(),
+        group = home?.grupo ?: away?.grupo ?: "-",
         homeTeam = home?.nombre ?: "Por definir",
         awayTeam = away?.nombre ?: "Por definir",
         homeFlagUrl = home?.bandera,
@@ -69,3 +70,17 @@ fun List<PartidoDto>.availableGroups(): List<String> =
     mapNotNull { it.pais1?.grupo }
         .distinct()
         .sorted()
+
+fun resolveGroups(apiGrupos: List<String>?, partidos: List<PartidoDto>): List<String> {
+    val groupsFromPartidos = partidos.availableGroups()
+    return when {
+        groupsFromPartidos.isNotEmpty() && !apiGrupos.isNullOrEmpty() ->
+            apiGrupos.filter { it in groupsFromPartidos.toSet() }
+                .ifEmpty { groupsFromPartidos }
+        !apiGrupos.isNullOrEmpty() -> apiGrupos
+        else -> groupsFromPartidos
+    }
+}
+
+fun List<HomeMatchUi>.filterHomeMatchesByGroup(group: String): List<HomeMatchUi> =
+    filter { it.group == group }

@@ -1,5 +1,6 @@
 package com.itwg.mundial.data.api
 
+import com.itwg.mundial.data.model.MarcadorDetailResponse
 import com.itwg.mundial.data.model.MarcadoresResponse
 import com.itwg.mundial.data.model.MessageResponse
 import com.itwg.mundial.data.model.UpdateMarcadorRequest
@@ -15,6 +16,12 @@ interface MarcadoresApi {
         @Query("userId") userId: Long,
         @Query("fase_id") faseId: Long? = null,
     ): MarcadoresResponse
+
+    @GET("marcadores/{marcadore}")
+    suspend fun getMarcadorDetail(
+        @Path("marcadore") partidoId: Long,
+        @Query("userId") userId: Long,
+    ): MarcadorDetailResponse
 
     @PUT("marcadores/{partidoId}")
     suspend fun updateMarcador(

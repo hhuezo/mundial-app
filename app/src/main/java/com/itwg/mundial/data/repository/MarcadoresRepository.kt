@@ -1,37 +1,46 @@
 package com.itwg.mundial.data.repository
 
+import android.content.Context
 import com.itwg.mundial.data.api.ApiClient
-import com.itwg.mundial.data.mapper.availableGroups
 import com.itwg.mundial.data.mapper.filterByGroup
+import com.itwg.mundial.data.store.SessionStore
+import com.itwg.mundial.data.mapper.resolveGroups
+import com.itwg.mundial.data.model.MarcadorDetailResponse
+import com.itwg.mundial.data.model.MarcadoresFaceDto
 import com.itwg.mundial.data.model.PartidoDto
 import com.itwg.mundial.data.model.UpdateMarcadorRequest
 import com.itwg.mundial.model.MatchPrediction
+import com.itwg.mundial.ui.home.FASE_GRUPOS_ID
 import retrofit2.HttpException
 import java.io.IOException
 
 data class MarcadoresData(
-    val groups: List<String>,
-    val partidos: List<PartidoDto>,
+    val faces: List<MarcadoresFaceDto>,
+    val grupos: List<String>?,
 )
 
-class MarcadoresRepository {
+class MarcadoresRepository(
+    context: Context? = null,
+) {
     private val marcadoresApi = ApiClient.marcadoresApi
+    private val sessionStore = context?.let { SessionStore(it) }
+
+    private suspend fun ensureBearerToken(): Result<Unit> {
+        val store = sessionStore ?: return Result.success(Unit)
+        val session = store.getSession()
+            ?: return Result.failure(Exception("No hay sesión activa."))
+        ApiClient.setBearerToken(session.token)
+        return Result.success(Unit)
+    }
 
     suspend fun loadMarcadores(userId: Long, faseId: Long? = null): Result<MarcadoresData> {
         return try {
+            ensureBearerToken().getOrElse { return Result.failure(it) }
             val response = marcadoresApi.getMarcadores(userId = userId, faseId = faseId)
-            val groupsFromPartidos = response.partidos.availableGroups()
-            val groups = when {
-                groupsFromPartidos.isNotEmpty() && !response.grupos.isNullOrEmpty() ->
-                    response.grupos.filter { it in groupsFromPartidos.toSet() }
-                        .ifEmpty { groupsFromPartidos }
-                !response.grupos.isNullOrEmpty() -> response.grupos
-                else -> groupsFromPartidos
-            }
             Result.success(
                 MarcadoresData(
-                    groups = groups,
-                    partidos = response.partidos,
+                    faces = response.faces,
+                    grupos = response.grupos,
                 ),
             )
         } catch (e: HttpException) {
@@ -43,8 +52,27 @@ class MarcadoresRepository {
         }
     }
 
+    fun groupsForFace(face: MarcadoresFaceDto, apiGrupos: List<String>?): List<String> {
+        if (face.faseId != FASE_GRUPOS_ID) return emptyList()
+        return resolveGroups(apiGrupos, face.partidos)
+    }
+
     fun matchesForGroup(partidos: List<PartidoDto>, group: String): List<MatchPrediction> =
         partidos.filterByGroup(group)
+
+    suspend fun loadMarcadorDetail(partidoId: Long, userId: Long): Result<MarcadorDetailResponse> {
+        return try {
+            ensureBearerToken().getOrElse { return Result.failure(it) }
+            val response = marcadoresApi.getMarcadorDetail(partidoId = partidoId, userId = userId)
+            Result.success(response)
+        } catch (e: HttpException) {
+            Result.failure(Exception("Error al cargar el partido (${e.code()})."))
+        } catch (_: IOException) {
+            Result.failure(Exception("No se pudo conectar con el servidor."))
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Error al cargar el partido."))
+        }
+    }
 
     suspend fun updateMarcador(
         userId: Long,

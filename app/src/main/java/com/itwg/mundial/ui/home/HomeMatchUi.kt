@@ -2,6 +2,7 @@ package com.itwg.mundial.ui.home
 
 data class HomeMatchUi(
     val id: String,
+    val group: String,
     val homeTeam: String,
     val awayTeam: String,
     val homeFlagUrl: String?,

@@ -4,6 +4,7 @@ import android.content.Context
 import com.itwg.mundial.data.api.ApiClient
 import com.itwg.mundial.data.model.LoginRequest
 import com.itwg.mundial.data.model.LoginResponse
+import com.itwg.mundial.data.model.ResetPasswordRequest
 import com.itwg.mundial.data.model.StoredUserProfile
 import com.itwg.mundial.data.model.UserDto
 import com.itwg.mundial.data.model.UserSession
@@ -101,6 +102,24 @@ class AuthRepository(context: Context) {
             authApi.me().user
         } catch (_: Exception) {
             null
+        }
+    }
+
+    suspend fun resetPassword(userId: Long, password: String): Result<String> {
+        return try {
+            val response = authApi.resetPassword(
+                ResetPasswordRequest(userId = userId, password = password),
+            )
+            credentialStore.getCredentials()?.let { (email, _) ->
+                credentialStore.saveCredentials(email, password)
+            }
+            Result.success(response.message)
+        } catch (e: HttpException) {
+            Result.failure(Exception(parseHttpError(e)))
+        } catch (e: IOException) {
+            Result.failure(Exception("No se pudo conectar con el servidor. Revise su conexión."))
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Error al actualizar la contraseña."))
         }
     }
 

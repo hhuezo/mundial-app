@@ -1,7 +1,6 @@
 package com.itwg.mundial.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,19 +12,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -35,15 +31,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.itwg.mundial.model.MatchPrediction
 import com.itwg.mundial.ui.components.EditMatchScoreDialog
+import com.itwg.mundial.ui.components.HomeFacesCarousel
+import com.itwg.mundial.ui.components.HomeGroupChips
 import com.itwg.mundial.ui.components.MatchPredictionCard
 import com.itwg.mundial.ui.marcadores.MarcadoresViewModel
 import com.itwg.mundial.ui.marcadores.MarcadoresViewModelFactory
+import com.itwg.mundial.ui.marcadores.toCarouselFace
 import com.itwg.mundial.ui.theme.MarkerEntered
 import com.itwg.mundial.ui.theme.MarkerFinished
 import com.itwg.mundial.ui.theme.MarkerPending
@@ -66,7 +66,6 @@ fun MarcadoresScreen(
     val scoreState = remember(userId) { mutableStateMapOf<String, Pair<String, String>>() }
     var editingMatch by remember { mutableStateOf<MatchPrediction?>(null) }
 
-    // Recarga al entrar a la pestaña o si cambia el usuario logueado
     LaunchedEffect(userId) {
         viewModel.loadMarcadores()
     }
@@ -84,6 +83,7 @@ fun MarcadoresScreen(
         }
     }
 
+    val selectedFace = uiState.faces.find { it.id == uiState.selectedFaceId }
     val errorMessage = uiState.errorMessage
 
     when {
@@ -121,7 +121,7 @@ fun MarcadoresScreen(
                 }
             }
         }
-        uiState.groups.isEmpty() -> {
+        uiState.faces.isEmpty() -> {
             Box(
                 modifier = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
@@ -134,8 +134,6 @@ fun MarcadoresScreen(
             }
         }
         else -> {
-            val selectedGroup = uiState.selectedGroup ?: uiState.groups.first()
-
             editingMatch?.let { match ->
                 if (!match.isFinished) {
                     DisposableEffect(match.id) {
@@ -187,41 +185,42 @@ fun MarcadoresScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-           
+
 
                 item {
-                    MarcadorStatusLegend()
+                    Text(
+                        text = "Fase",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                    HomeFacesCarousel(
+                        faces = uiState.faces.map { it.toCarouselFace() },
+                        selectedFaceId = uiState.selectedFaceId,
+                        onFaceSelected = viewModel::selectFace,
+                    )
                 }
 
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        uiState.groups.forEach { group ->
-                            FilterChip(
-                                selected = selectedGroup == group,
-                                onClick = { viewModel.selectGroup(group) },
-                                label = {
-                                    Text("Grupo $group")
-                                },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Midnight,
-                                    selectedLabelColor = Pearl,
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                            )
-                        }
+                if (selectedFace?.isGroupPhase == true && uiState.selectedGroup != null) {
+                    item {
+                        HomeGroupChips(
+                            groups = selectedFace.groups,
+                            selectedGroup = uiState.selectedGroup!!,
+                            onGroupSelected = viewModel::selectGroup,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
                     }
                 }
 
                 if (uiState.matches.isEmpty()) {
                     item {
                         Text(
-                            text = "No hay partidos en este grupo.",
+                            text = if (selectedFace?.isGroupPhase == true) {
+                                "No hay partidos en este grupo."
+                            } else {
+                                "No hay partidos en esta fase."
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = 8.dp),
@@ -236,7 +235,6 @@ fun MarcadoresScreen(
                             match = match,
                             homeScore = scores.first,
                             awayScore = scores.second,
-                            onStatsClick = { /* pantalla de estadísticas pendiente */ },
                             onEditClick = { editingMatch = match },
                         )
                     }
